@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"> <title>Tester Rental PS - Full Control</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #f0f2f5; }
+        .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h3 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        button { cursor: pointer; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 5px; }
+        pre { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: 'Consolas', monospace; min-height: 50px;}
+        .grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-err { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align:center;">🎮 Control Panel Rental PS (Fixed)</h2>
+
+    <div class="card">
+        <h3>1️⃣ Start Billing (Mulai Sewa)</h3>
+        <div class="grid">
+            <div>
+                <label>Pilih Unit:</label>
+                <input type="number" id="startUnitId" value="1" placeholder="ID Unit (1, 2, dst)">
+            </div>
+            <button onclick="apiStart()">▶️ Start Billing</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2️⃣ Pesen Makan (API Snacks)</h3>
+        <p style="font-size: 14px; color: #666;">⚠️ Masukkan ID Rental yang sedang AKTIF (Liat di HeidiSQL tabel rentals)</p>
+        <div class="grid">
+            <div>
+                <input type="number" id="rentIdSnack" placeholder="ID Rental (Bukan Unit ID!)">
+                <select id="snackMenu">
+                    <option value="1">Indomie (ID: 1)</option>
+                    <option value="2">Es Teh (ID: 2)</option>
+                </select>
+                <input type="number" id="snackQty" value="1" style="width: 50px;" placeholder="Qty">
+            </div>
+            <button onclick="apiOrder()" style="background: #ff9800;">🍜 Pesen</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>3️⃣ Checkout & Bayar (Selesai Main)</h3>
+        <div class="grid">
+            <input type="number" id="rentIdStop" placeholder="ID Rental yang mau distop">
+            <button onclick="apiStop()" style="background: #f44336;">⏹️ Stop & Bayar</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>4️⃣ Laporan Admin (Omzet)</h3>
+        <button onclick="apiDash()" style="background: #4caf50;">📊 Cek Duit Masuk</button>
+    </div>
+
+    <h3>🖥️ Terminal Output:</h3>
+    <pre id="output">Siap dieksekusi...</pre>
+
+    <script>
+        const API = "http://localhost/rental_ps/api";
+
+        function log(data) {
+            // Kalau data error object, kita ambil messagenya biar kebaca
+            if (data instanceof Error) {
+                document.getElementById("output").innerHTML = `<span class="status-err">ERROR: ${data.message}</span>`;
+            } else {
+                document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+            }
+        }
+
+        async function fetchAPI(url, options = {}) {
+            try {
+                const res = await fetch(url, options);
+                // Cek kalau file PHP nya ga ketemu (404)
+                if (!res.ok) throw new Error(`HTTP Error! Status: ${res.status} (${res.statusText}) - Cek nama file PHP lu bener ga?`);
+                
+                const text = await res.text(); // Ambil text mentah dulu
+                try {
+                    return JSON.parse(text); // Baru coba jadiin JSON
+                } catch (e) {
+                    throw new Error("Respon bukan JSON valid! Isinya: " + text.substring(0, 100) + "...");
+                }
+            } catch (err) {
+                log(err);
+                throw err; // Lempar error biar ga lanjut
+            }
+        }
+
+        async function apiStart() {
+            const uid = document.getElementById("startUnitId").value;
+            const res = await fetchAPI(`${API}/rentals.php`, {
+                method: 'POST',
+                body: JSON.stringify({ unit_id: uid })
+            });
+            log(res);
+        }
+
+        async function apiOrder() {
+            const id = document.getElementById("rentIdSnack").value;
+            const snack = document.getElementById("snackMenu").value;
+            const qty = document.getElementById("snackQty").value;
+            
+            if(!id) { log({status:"error", message:"Isi ID Rental dulu bro!"}); return; }
+
+            const res = await fetchAPI(`${API}/snacks.php`, {
+                method: 'POST',
+                body: JSON.stringify({ rental_id: id, snack_id: snack, qty: qty })
+            });
+            log(res);
+        }
+
+        async function apiStop() {
+            const id = document.getElementById("rentIdStop").value;
+            if(!id) { log({status:"error", message:"Isi ID Rental dulu bro!"}); return; }
+
+            const res = await fetchAPI(`${API}/checkout.php`, {
+                method: 'POST',
+                body: JSON.stringify({ rental_id: id })
+            });
+            log(res);
+        }
+
+        async function apiDash() {
+            const res = await fetchAPI(`${API}/dashboard.php`);
+            log(res);
+        }
+    </script>
+</body>
+</html>
