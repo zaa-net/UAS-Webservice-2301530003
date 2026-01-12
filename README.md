@@ -7,7 +7,7 @@ Aplikasi berbasis Web (PHP Native & JavaScript) untuk manajemen operasional Rent
 * **Nama:** Rizal Latumasandhi Sudarto
 * **NIM:** 23.01.53.0003
 * **Mata Kuliah:** Web Service 
-* **Kampus:** Universitas Stikubank (UNISBANK)
+* **Kampus:** Universitas Stikubank (UNISBANK) Semarang
 
 ---
 
@@ -40,8 +40,6 @@ Sistem ini menggunakan 10 tabel yang saling berelasi untuk integritas data:
 6.  `snacks` - Inventory makanan/minuman.
 7.  `snack_orders` - Detail pesanan snack per transaksi rental.
 8.  `payments` - Rekap pembayaran final (Sewa + Snack).
-9.  `packages` - (Opsional) Data paket promo.
-10. `games` - (Opsional) Katalog game yang tersedia.
 
 ---
 
